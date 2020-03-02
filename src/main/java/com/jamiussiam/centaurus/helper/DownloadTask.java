@@ -52,7 +52,8 @@ public class DownloadTask implements Runnable {
                 downloadThreads.get(i).start();
             }
 
-            while (!isCompleted());
+            while (!isCompleted())
+                Thread.sleep(500);
 
             long endTime = System.nanoTime();
 
@@ -64,7 +65,8 @@ public class DownloadTask implements Runnable {
             Thread fileMergerThread = new Thread(fileMerger);
 
             fileMergerThread.start();
-            while (fileMergerThread.isAlive());
+            while (fileMergerThread.isAlive())
+                Thread.sleep(500);
 
             endTime = System.nanoTime();
 
