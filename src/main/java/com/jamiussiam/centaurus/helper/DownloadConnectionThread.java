@@ -1,14 +1,13 @@
 package com.jamiussiam.centaurus.helper;
 
-import com.jamiussiam.centaurus.Main;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 public class DownloadConnectionThread implements Runnable {
     public final static Logger logger = Logger.getLogger(DownloadConnectionThread.class);
@@ -45,23 +44,14 @@ public class DownloadConnectionThread implements Runnable {
             conn.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
             conn.connect();
 
-            InputStream in = conn.getInputStream();
-            logger.log(Level.DEBUG, String.format("File Path %s/%s", saveLocation, partName));
-            FileOutputStream fs = new FileOutputStream(String.format("%s/%s", saveLocation, partName));
-
-
-            long totalSize = endByte - startByte;
-
-            for (int b = in.read(), count = 0; count <= endByte && b != -1; b = in.read(), count++) {
-                fs.write(b);
-                downloadedBytes++;
-                progess = (float) count / (float) totalSize * 100f;
-            }
+            ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
+            FileOutputStream fos = new FileOutputStream(String.format("%s/%s", saveLocation, partName));
+            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
             logger.log(Level.DEBUG, String.format("Part %s Download Complete", partName));
 
-            in.close();
-            fs.close();
+            //in.close();
+            //fs.close();
         } catch (Exception e) {
             logger.log(Level.ERROR, e.getMessage());
         }
