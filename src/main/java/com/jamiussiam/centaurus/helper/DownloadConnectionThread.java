@@ -1,5 +1,6 @@
 package com.jamiussiam.centaurus.helper;
 
+import com.jamiussiam.centaurus.util.ReadableConsumerByteChannel;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -21,6 +22,7 @@ public class DownloadConnectionThread implements Runnable {
     public long downloadedBytes;
     public float progess;
     public int connectionNo;
+    long size = 0;
 
     public DownloadConnectionThread(String downloadUrl, long startByte, long endByte, String saveLocation, String partName,
                                     DownloadTask parentDownloadTask, int connectionNo) {
@@ -45,10 +47,16 @@ public class DownloadConnectionThread implements Runnable {
             conn.connect();
 
             ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());
-            FileOutputStream fos = new FileOutputStream(String.format("%s/%s", saveLocation, partName));
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
-            logger.log(Level.DEBUG, String.format("Part %s Download Complete", partName));
+
+            ReadableConsumerByteChannel rcbc = new ReadableConsumerByteChannel(rbc,(b)->{
+                logger.log(Level.DEBUG, String.format("%d downloaded %f kb", connectionNo, (b / 1000f)));
+            });
+
+            FileOutputStream fos = new FileOutputStream(String.format("%s/%s", saveLocation, partName));
+            fos.getChannel().transferFrom(rcbc, 0, Long.MAX_VALUE);
+
+            logger.log(Level.DEBUG, String.format("Part %s Download Complete"));
 
             //in.close();
             //fs.close();
