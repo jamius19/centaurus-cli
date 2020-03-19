@@ -14,9 +14,9 @@ public class FileMerger implements Runnable {
 
 
     // Save location for the file
-    private String saveLoc;
+    private String saveLocation;
 
-    private LinkedList<FileInputStream> inputStreams;
+    private LinkedList<FileInputStream> downloadedFileParts;
 
     private FileDetails fileDetails;
 
@@ -25,20 +25,21 @@ public class FileMerger implements Runnable {
     private int connectionCount;
 
 
-    public FileMerger(String saveLoc, String fileName, FileDetails fileDetails, int connectionCount) {
-        this.saveLoc = saveLoc;
+    public FileMerger(String saveLocation, String fileName, FileDetails fileDetails, int connectionCount) throws FileNotFoundException {
+        this.saveLocation = saveLocation;
         this.fileName = fileName;
         this.fileDetails = fileDetails;
         this.connectionCount = connectionCount;
 
-        inputStreams = new LinkedList<>();
+        downloadedFileParts = new LinkedList<>();
 
         try {
-            FileOutputStream fs = new FileOutputStream(this.saveLoc + fileName);
+            FileOutputStream fs = new FileOutputStream(this.saveLocation + fileName);
             fs.flush();
             fs.close();
         } catch (Exception e) {
             logger.log(Level.ERROR, e.getMessage());
+            throw new FileNotFoundException("Cannot create Merged File");
         }
 
     }
@@ -51,18 +52,18 @@ public class FileMerger implements Runnable {
                 LinkedList<String> fileParts = fileDetails.getSubParts(i);
 
                 for (String part : fileParts) {
-                    File temp = new File(String.format("%s/%s",saveLoc, part));
-                    inputStreams.add(new FileInputStream(temp));
+                    File temp = new File(String.format("%s/%s", saveLocation, part));
+                    downloadedFileParts.add(new FileInputStream(temp));
                 }
             }
 
-            FileOutputStream fs = new FileOutputStream(saveLoc + fileName, true);
+            FileOutputStream fs = new FileOutputStream(saveLocation + fileName, true);
 
             FileChannel fsOut = fs.getChannel();
 
             long lastBytePosition = 0;
 
-           for (FileInputStream inputStream : inputStreams) {
+           for (FileInputStream inputStream : downloadedFileParts) {
                FileChannel fsIn = inputStream.getChannel();
                fsOut.transferFrom(fsIn, lastBytePosition, fsIn.size());
                lastBytePosition += fsIn.size();
