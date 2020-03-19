@@ -18,9 +18,10 @@ public class Main {
 
 
         String saveFolder = System.getProperty("user.home") + "/Desktop/dmanager/";
-        logger.log(Level.INFO, "Starting Download with 8 connections.");
 
-        DownloadTask downloadTask = new DownloadTask(urlM, saveFolder, 8);
+
+        logger.log(Level.INFO, "Starting Download with 8 connections.");
+        DownloadTask downloadTask = new DownloadTask(urlXL, saveFolder, 8);
         Thread downloadThread = new Thread(downloadTask);
         downloadThread.start();
         downloadThread.join();

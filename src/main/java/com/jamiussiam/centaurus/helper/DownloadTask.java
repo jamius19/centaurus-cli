@@ -14,7 +14,7 @@ public class DownloadTask implements Runnable {
     public final static Logger logger = Logger.getLogger(DownloadTask.class);
 
     private final double BYTE_TO_MB = 1_048_576;
-    private final double NANO_TO_SEC = 1_000_000_000f;
+    private final double NANO_TO_SECOND = 1_000_000_000f;
 
     String url;
     String fileExtension;
@@ -28,8 +28,9 @@ public class DownloadTask implements Runnable {
 
     long downloadedBytes;
     long startTime;
+    long lastDLSpeedTime;
 
-    private long fileSize;
+    long fileSize;
 
     public DownloadTask(String url, String saveLocation, int connectionCount) {
         logger.log(Level.INFO, String.format("Donwload URL: %s", url));
@@ -72,7 +73,7 @@ public class DownloadTask implements Runnable {
         long endTime = System.nanoTime();
 
         logger.log(Level.INFO, String.format("Download complete. Time taken: %f s",
-                (endTime - startTime) / NANO_TO_SEC));
+                (endTime - startTime) / NANO_TO_SECOND));
         logger.log(Level.INFO, "Starting parts merging.");
 
         try {
@@ -92,7 +93,7 @@ public class DownloadTask implements Runnable {
             endTime = System.nanoTime();
 
             logger.log(Level.INFO, String.format("Merging complete. Time taken: %f s",
-                    (endTime - startTime) / NANO_TO_SEC));
+                    (endTime - startTime) / NANO_TO_SECOND));
         } catch (FileNotFoundException e) {
             logger.log(Level.ERROR, "File cannot be merged.");
             e.printStackTrace();
@@ -159,26 +160,25 @@ public class DownloadTask implements Runnable {
     }
 
     private double getProgress() {
-        downloadedBytes = 0;
+        long latestDownloadedBytes = 0;
 
         for(DownloadConnectionThread i : downloadConnections) {
-            downloadedBytes += i.downloadedBytes;
+            latestDownloadedBytes += i.downloadedBytes;
         }
 
 
-        /*double elapsedTimeInSecond = (System.nanoTime() - lastDLSpeedTime) / 1_000_000_000f;
+        double elapsedTimeInSecond = System.nanoTime() - lastDLSpeedTime;
 
-        if(elapsedTimeInSecond >= 1) {
+        if(elapsedTimeInSecond >= NANO_TO_SECOND) {
             long deltaSize = latestDownloadedBytes - downloadedBytes;
-            dlSpeedPerSecond = deltaSize / 1_000_000f;
+            dlSpeedPerSecond = deltaSize / BYTE_TO_MB;
             lastDLSpeedTime = System.nanoTime();
-        }*/
+            downloadedBytes = latestDownloadedBytes;
+        }
 
         //logger.log(Level.DEBUG, String.format("%d %f %f", deltaSize, elapsedTimeInSecond, dlSpeedPerSecond));
         //logger.log(Level.DEBUG, String.format("DL Bytes: %d\t Total Size: %d", downloadedBytes, fileSize));
 
-        double elapsedTimeInSecond = (System.nanoTime() - startTime) / NANO_TO_SEC;
-        dlSpeedPerSecond = (downloadedBytes / elapsedTimeInSecond) / BYTE_TO_MB;
 
         return downloadProgress  = (downloadedBytes / (double) fileSize);
     }
